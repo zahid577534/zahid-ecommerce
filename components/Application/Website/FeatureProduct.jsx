@@ -4,10 +4,9 @@ import Link from 'next/link'
 import ProductBox from './ProductBox'
 
 const FeatureProduct = async () => {
-  const res = await fetch(
-    "http://localhost:3000/api/product/get-featured-product",
-    { cache: "no-store" }
-  )
+  const res = await fetch("/api/product/get-featured-product", {
+  cache: "no-store",
+});
 
   const productData = await res.json()
   const products = productData?.data || []
