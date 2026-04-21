@@ -12,9 +12,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormControl,
-  Input
+  FormControl
 } from '@/components/ui/form'
+
+import { Input } from '@/components/ui/input'
 import ButtonLoading from '@/components/Application/ButtonLoading'
 
 const breadCrumbData = {
