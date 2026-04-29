@@ -69,7 +69,7 @@ export async function POST(req) {
       );
     }
 
-    // ❗ IMPORTANT CHANGE:
+    // IMPORTANT CHANGE:
     // DO NOT ISSUE FULL AUTH TOKEN YET
     // Instead send temporary flag
 

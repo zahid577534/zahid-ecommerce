@@ -15,7 +15,7 @@ const PrivacyPolicy = () => {
             <div className='lg:px-40 px-5 py-20'>
                 <h1 className='text-xl font-semibold mb-3'>Privacy Policy</h1>
                 <p>
-                    At E-store, we are committed to protecting your privacy and ensuring that your personal information is handled in a safe and responsible manner.
+                    At MA Exports Sialkot, we are committed to protecting your privacy and ensuring that your personal information is handled in a safe and responsible manner.
                 </p>
 
                 <p className='mt-3'>
@@ -50,7 +50,7 @@ const PrivacyPolicy = () => {
                 </p>
 
                 <p className='mt-3'>
-                    Thank you for trusting E-store. Your privacy is important to us.
+                    Thank you for trusting MA Exports Sialkot. Your privacy is important to us.
                 </p>
             </div>
         </div>

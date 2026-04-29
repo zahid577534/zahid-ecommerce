@@ -23,7 +23,7 @@ const Footer = () => {
             className='w-36 mb-3'
           />
           <p className='text-gray-500 text-sm leading-6'>
-            Zahid Store is your trusted destination for quality and convenience.
+            MA Exports Sialkot is your trusted destination for quality and convenience.
             From fashion essentials to everyday needs, we bring everything you
             need—all in one place.
           </p>
@@ -76,7 +76,7 @@ const Footer = () => {
           <ul className='space-y-3'>
             <li className='flex items-center gap-2 text-gray-500'>
               <FaLocationPin size={18}/>
-              <span className='text-sm'>Zahid Store, Sialkot, Pakistan</span>
+              <span className='text-sm'>MA Exports Sialkot, Pakistan</span>
             </li>
 
             <li className='flex items-center gap-2 text-gray-500'>
@@ -88,8 +88,8 @@ const Footer = () => {
 
             <li className='flex items-center gap-2 text-gray-500'>
               <MdEmail size={18}/>
-              <Link href='mailto:test@gmail.com' className='text-sm hover:text-primary'>
-                test@gmail.com
+              <Link href='mailto:maexport.sialkot@gmail.com' className='text-sm hover:text-primary'>
+                maexport.sialkot@gmail.com
               </Link>
             </li>
           </ul>
@@ -105,7 +105,7 @@ const Footer = () => {
 
       </div>
       <div className='border-t py-6 text-center text-gray-500 text-sm'>
-        &copy; {new Date().getFullYear()} Zahid Store. All rights reserved.
+        &copy; {new Date().getFullYear()} MA Exports Sialkot. All rights reserved.
       </div>
     </footer>
   )
