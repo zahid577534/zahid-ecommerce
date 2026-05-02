@@ -15,45 +15,91 @@ import { useEffect, useState } from "react";
 import imagePlaceholder from "@/public/assets/images/img-placeholder.webp";
 import { IoStar } from "react-icons/io5";
 import { HiMinus, HiPlus } from "react-icons/hi";
+import {
+  IoClose,
+  IoChevronBack,
+  IoChevronForward,
+} from "react-icons/io5";
 
 import ButtonLoading from "@/components/Application/ButtonLoading";
 import ProductReview from "@/components/Application/Website/ProductReview";
 
 import { useDispatch } from "react-redux";
-import { addToCart } from "@/redux/cartSlice"; // ✅ FIXED PATH
+import { addToCart } from "@/redux/cartSlice";
 import { toast } from "react-toastify";
 
-const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
+const ProductDetail = ({
+  product,
+  variant,
+  colors,
+  sizes,
+  reviewCount,
+}) => {
   const dispatch = useDispatch();
 
-  const [activeImage, setActiveImage] = useState("");
+  const [activeImage, setActiveImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // SET DEFAULT IMAGE
   useEffect(() => {
     if (variant?.images?.length > 0) {
       setActiveImage(variant.images[0].secure_url);
+    } else {
+      setActiveImage(null);
     }
   }, [variant]);
 
-  // ADD TO CART FUNCTION
+  const currentIndex = variant?.images?.findIndex(
+    (img) => img.secure_url === activeImage
+  );
+
+  const handleNext = () => {
+    if (!variant?.images?.length) return;
+    const next = (currentIndex + 1) % variant.images.length;
+    setActiveImage(variant.images[next].secure_url);
+  };
+
+  const handlePrev = () => {
+    if (!variant?.images?.length) return;
+    const prev =
+      (currentIndex - 1 + variant.images.length) %
+      variant.images.length;
+    setActiveImage(variant.images[prev].secure_url);
+  };
+
+  // KEYBOARD SUPPORT
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!isFullscreen) return;
+
+      if (e.key === "Escape") setIsFullscreen(false);
+      if (e.key === "ArrowRight") handleNext();
+      if (e.key === "ArrowLeft") handlePrev();
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () =>
+      window.removeEventListener("keydown", handleKey);
+  }, [isFullscreen, activeImage]);
+
   const handleAddToCart = () => {
     if (!product || !variant) return;
 
-    const cartProduct = {
-      productId: product._id,
-      variantId: variant._id,
-      name: product.name,
-      url: product.slug,
-      size: variant.size,
-      color: variant.color,
-      mrp: variant.mrp,
-      sellingPrice: variant.finalPrice,
-      media: variant?.images?.[0]?.secure_url,
-      quantity: quantity,
-    };
-
-    dispatch(addToCart(cartProduct));
+    dispatch(
+      addToCart({
+        productId: product._id,
+        variantId: variant._id,
+        name: product.name,
+        url: product.slug,
+        size: variant.size,
+        color: variant.color,
+        mrp: variant.mrp,
+        sellingPrice: variant.finalPrice,
+        media: variant?.images?.[0]?.secure_url,
+        quantity,
+      })
+    );
 
     toast.success("Added to cart ✅");
   };
@@ -65,7 +111,6 @@ const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
       <div className="mb-6">
         <Breadcrumb>
           <BreadcrumbList>
-
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link href="/">Home</Link>
@@ -84,47 +129,50 @@ const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
 
             <BreadcrumbItem>
               <BreadcrumbPage>
-                {product?.name || "Product"}
+                {product?.name}
               </BreadcrumbPage>
             </BreadcrumbItem>
-
           </BreadcrumbList>
         </Breadcrumb>
       </div>
 
       {/* MAIN */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+      <div className="flex flex-col lg:flex-row gap-8">
 
-        {/* IMAGE */}
+        {/* IMAGE SECTION */}
         <div className="w-full lg:w-1/2">
 
-          <img
-            src={activeImage || imagePlaceholder.src}
-            alt={product?.name}
-            className="w-full h-[250px] sm:h-[350px] lg:h-[450px] object-cover rounded-lg mb-4"
-          />
+          <div className="border rounded-lg overflow-hidden bg-white">
+            <img
+              src={activeImage || imagePlaceholder.src}
+              alt="product"
+              onClick={() =>
+                activeImage && setIsFullscreen(true)
+              }
+              className="w-full h-[400px] object-contain cursor-zoom-in"
+            />
+          </div>
 
-          {/* THUMBNAILS */}
-          <div className="flex gap-2 overflow-x-auto">
-            {variant?.images?.map((thumb) => (
+          <div className="flex gap-2 mt-3 overflow-x-auto">
+            {variant?.images?.map((img) => (
               <img
-                key={thumb._id}
-                src={thumb.secure_url}
-                alt="thumb"
-                className={`w-14 h-14 object-cover rounded cursor-pointer border-2 ${
-                  thumb.secure_url === activeImage
+                key={img._id}
+                src={img.secure_url}
+                onClick={() =>
+                  setActiveImage(img.secure_url)
+                }
+                className={`w-16 h-16 object-cover rounded cursor-pointer border ${
+                  img.secure_url === activeImage
                     ? "border-black"
-                    : "border-transparent"
+                    : "border-gray-300"
                 }`}
-                onClick={() => setActiveImage(thumb.secure_url)}
               />
             ))}
           </div>
-
         </div>
 
         {/* DETAILS */}
-        <div className="w-full lg:w-1/2 flex flex-col gap-4">
+        <div className="w-full lg:w-1/2 space-y-4">
 
           <h1 className="text-2xl font-semibold">
             {product?.name}
@@ -143,10 +191,10 @@ const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
           {/* PRICE */}
           <div className="flex items-center gap-3 text-xl">
             <p className="font-bold text-red-600">
-              Rs {variant?.finalPrice || 0}
+              ${variant?.finalPrice || 0}
             </p>
             <p className="line-through text-gray-500">
-              Rs {variant?.mrp || 0}
+              ${variant?.mrp || 0}
             </p>
           </div>
 
@@ -156,7 +204,9 @@ const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
 
           {/* DESCRIPTION */}
           <div>
-            <h3 className="font-semibold">Description</h3>
+            <h3 className="font-semibold text-lg mb-1">
+              Description
+            </h3>
 
             {product?.description ? (
               <div
@@ -172,78 +222,17 @@ const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
             )}
           </div>
 
-          {/* COLORS */}
-          <div>
-            <p className="font-semibold">
-              Color: {variant?.color?.name || "N/A"}
-            </p>
-
-            <div className="flex gap-2 flex-wrap">
-              {colors?.map((color) => {
-                const isActive =
-                  color.name === variant?.color?.name;
-
-                return (
-                  <Link
-                    key={color.name}
-                    href={`?color=${encodeURIComponent(
-                      color.name
-                    )}&size=${encodeURIComponent(
-                      variant?.size || ""
-                    )}`}
-                    className={`border px-3 py-1 rounded ${
-                      isActive
-                        ? "bg-primary text-white"
-                        : "hover:bg-primary hover:text-white"
-                    }`}
-                  >
-                    {color.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* SIZES */}
-          <div>
-            <p className="font-semibold">
-              Size: {variant?.size || "N/A"}
-            </p>
-
-            <div className="flex gap-2 flex-wrap">
-              {sizes?.map((size) => {
-                const isActive = size === variant?.size;
-
-                return (
-                  <Link
-                    key={size}
-                    href={`?color=${encodeURIComponent(
-                      variant?.color?.name || ""
-                    )}&size=${encodeURIComponent(size)}`}
-                    className={`border px-3 py-1 rounded ${
-                      isActive
-                        ? "bg-primary text-white"
-                        : "hover:bg-primary hover:text-white"
-                    }`}
-                  >
-                    {size}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
           {/* QUANTITY */}
           <div>
             <p className="font-bold mb-2">Quantity</p>
-
-            <div className="flex items-center border w-fit rounded overflow-hidden">
-
+            <div className="flex items-center border w-fit rounded">
               <button
                 onClick={() =>
-                  setQuantity((q) => (q > 1 ? q - 1 : 1))
+                  setQuantity((q) =>
+                    q > 1 ? q - 1 : 1
+                  )
                 }
-                className="w-10 flex justify-center"
+                className="w-10"
               >
                 <HiMinus />
               </button>
@@ -252,35 +241,89 @@ const ProductDetail = ({ product, variant, colors, sizes, reviewCount }) => {
                 type="number"
                 value={quantity}
                 onChange={(e) =>
-                  setQuantity(Number(e.target.value))
+                  setQuantity(
+                    Math.max(1, Number(e.target.value))
+                  )
                 }
-                className="w-14 text-center outline-none"
+                className="w-14 text-center"
               />
 
               <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-10 flex justify-center"
+                onClick={() =>
+                  setQuantity((q) => q + 1)
+                }
+                className="w-10"
               >
                 <HiPlus />
               </button>
-
             </div>
           </div>
 
-          {/* ADD TO CART */}
           <ButtonLoading
-            type="button"
             text="Add to Cart"
-            className="w-full rounded-full py-4 cursor-pointer"
             onClick={handleAddToCart}
+            className="w-full py-3 rounded-full"
           />
-
         </div>
       </div>
 
-      {/* REVIEW */}
-      <ProductReview productId={product?._id} />
+      {/* FULLSCREEN LIGHTBOX */}
+      {isFullscreen && activeImage && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col">
 
+          <div className="flex justify-between items-center p-4 text-white">
+            <span>
+              {currentIndex + 1} / {variant?.images?.length}
+            </span>
+
+            <IoClose
+              size={28}
+              className="cursor-pointer"
+              onClick={() => setIsFullscreen(false)}
+            />
+          </div>
+
+          <div className="flex-1 flex items-center justify-center relative">
+
+            <IoChevronBack
+              size={40}
+              className="absolute left-5 text-white cursor-pointer"
+              onClick={handlePrev}
+            />
+
+            <img
+              src={activeImage}
+              className="max-h-[80vh] object-contain"
+            />
+
+            <IoChevronForward
+              size={40}
+              className="absolute right-5 text-white cursor-pointer"
+              onClick={handleNext}
+            />
+          </div>
+
+          <div className="flex gap-2 p-4 justify-center overflow-x-auto">
+            {variant?.images?.map((img) => (
+              <img
+                key={img._id}
+                src={img.secure_url}
+                onClick={() =>
+                  setActiveImage(img.secure_url)
+                }
+                className={`w-16 h-16 object-cover rounded cursor-pointer border ${
+                  img.secure_url === activeImage
+                    ? "border-white"
+                    : "border-gray-500"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* REVIEWS */}
+      <ProductReview productId={product?._id} />
     </div>
   );
 };

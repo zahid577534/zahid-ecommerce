@@ -87,7 +87,7 @@ const Cart = () => {
                       Qty: {item.quantity}
                     </p>
                     <p className="text-sm font-semibold text-primary">
-                      Rs {item.sellingPrice}
+                      $ {item.sellingPrice}
                     </p>
                   </div>
                 </div>
@@ -112,7 +112,7 @@ const Cart = () => {
             {/* Total */}
             <div className="flex justify-between font-semibold text-base">
               <span>Total</span>
-              <span>Rs {totalPrice}</span>
+              <span>$ {totalPrice}</span>
             </div>
 
             {/* Buttons */}

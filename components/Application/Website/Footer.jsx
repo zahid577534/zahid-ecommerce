@@ -97,8 +97,20 @@ const Footer = () => {
           {/* Social Icons */}
           <div className='flex gap-4 mt-4 text-gray-600 text-xl'>
             <FaYoutube className='hover:text-red-500 cursor-pointer'/>
-            <FaFacebook className='hover:text-blue-600 cursor-pointer'/>
-            <FaSquareWhatsapp className='hover:text-green-500 cursor-pointer'/>
+            <a 
+                href="https://web.facebook.com/profile.php?id=61589094477341" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <FaFacebook className="hover:text-blue-600 cursor-pointer" />
+              </a>
+            <a 
+        href="https://wa.me/923314724901" 
+        target="_blank" 
+        rel="noopener noreferrer"
+      >
+        <FaSquareWhatsapp className="hover:text-green-500 cursor-pointer" />
+      </a>
             <FaTwitter className='hover:text-pink-500 cursor-pointer'/>
           </div>
         </div>

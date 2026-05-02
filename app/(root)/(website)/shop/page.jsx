@@ -14,12 +14,17 @@ const Shop = () => {
   const router = useRouter()
 
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [colors, setColors] = useState([])
+
   const [limit, setLimit] = useState(9)
   const [sorting, setSorting] = useState('default')
   const [loading, setLoading] = useState(false)
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
-  // ✅ FILTER HANDLER
+  // =========================
+  // FILTER HANDLER
+  // =========================
   const updateFilter = (key, value) => {
     const params = new URLSearchParams(searchParams.toString())
 
@@ -32,7 +37,9 @@ const Shop = () => {
     router.push(`/shop?${params.toString()}`)
   }
 
-  // ✅ FETCH PRODUCTS
+  // =========================
+  // FETCH PRODUCTS
+  // =========================
   const fetchProducts = async () => {
     try {
       setLoading(true)
@@ -45,14 +52,20 @@ const Shop = () => {
       const data = await res.json()
 
       if (data.success) {
-        setProducts(data.data.products)
+        setProducts(data.data.products || [])
+        setCategories(data.data.categories || [])
+        setColors(data.data.colors || [])
       } else {
         setProducts([])
+        setCategories([])
+        setColors([])
       }
 
     } catch (error) {
       console.error(error)
       setProducts([])
+      setCategories([])
+      setColors([])
     } finally {
       setLoading(false)
     }
@@ -65,6 +78,7 @@ const Shop = () => {
   return (
     <div>
 
+      {/* BREADCRUMB */}
       <WebSiteBreadcrumb
         props={{
           title: "Shop",
@@ -77,7 +91,13 @@ const Shop = () => {
         {/* FILTER */}
         <div className="hidden lg:block w-72">
           <div className="sticky top-0 bg-gray-50 p-4 rounded">
-            <Filter updateFilter={updateFilter} />
+
+            <Filter
+              updateFilter={updateFilter}
+              categories={categories}
+              colors={colors}
+            />
+
           </div>
         </div>
 
@@ -97,39 +117,48 @@ const Shop = () => {
             Showing {products.length} products
           </p>
 
+          {/* GRID */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
 
             {loading ? (
-              <p>Loading...</p>
+              <div className="col-span-full text-center py-10">
+                Loading products...
+              </div>
             ) : products.length > 0 ? (
               products.map((item) => (
-
-                // ✅ CLICKABLE PRODUCT
                 <Link
                   key={item._id}
                   href={`/product/${item.slug}`}
-                  className="border p-3 rounded block hover:shadow-lg hover:scale-[1.02] transition"
+                  className="border p-3 rounded block hover:shadow-lg hover:scale-[1.02] transition bg-white"
                 >
-                  <Image
-                    src={item.images?.[0]?.secure_url || "/placeholder.webp"}
-                    alt={item.name}
-                    width={300}
-                    height={300}
-                    className="w-full h-40 object-cover rounded"
-                  />
 
-                  <h3 className="mt-2 text-sm font-medium">
+                  <div className="w-full h-40 flex items-center justify-center bg-gray-50 rounded">
+                    <Image
+                      src={
+                        item.images?.[0]?.secure_url ||
+                        "/placeholder.webp"
+                      }
+                      alt={item.name}
+                      width={300}
+                      height={300}
+                      className="max-h-full w-auto object-contain"
+                    />
+                  </div>
+
+                  <h3 className="mt-2 text-sm font-medium line-clamp-1">
                     {item.name}
                   </h3>
 
-                  <p className="text-sm text-gray-600">
-                    Rs {item.minPrice}
+                  <p className="text-sm text-gray-600 mt-1">
+                    ${item.minPrice}
                   </p>
-                </Link>
 
+                </Link>
               ))
             ) : (
-              <p>No products found</p>
+              <div className="col-span-full text-center py-10 text-gray-500">
+                No products found
+              </div>
             )}
 
           </div>

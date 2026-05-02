@@ -12,7 +12,7 @@ export async function POST(req) {
       line_items: [
         {
           price_data: {
-            currency: "pkr",
+            currency: "USD",
             product_data: { name: "Order Payment" },
             unit_amount: amount * 100,
           },

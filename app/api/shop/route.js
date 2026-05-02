@@ -15,7 +15,7 @@ export async function GET(req) {
     // =========================
     const categorySlug = searchParams.get("category");
     const size = searchParams.get("size");
-    const colors = searchParams.get("color");
+    const color = searchParams.get("color");
     const price = searchParams.get("price");
     const search = searchParams.get("search");
 
@@ -37,13 +37,15 @@ export async function GET(req) {
     }
 
     // =========================
-    // FILTER PARSE
+    // FILTER PARSING
     // =========================
     const sizeArray = size
       ? size.split(",").map((s) => s.toUpperCase())
       : [];
 
-    const colorArray = colors ? colors.split(",") : [];
+    const colorArray = color
+      ? color.split(",").map((c) => c.trim())
+      : [];
 
     let minPrice = null;
     let maxPrice = null;
@@ -55,18 +57,18 @@ export async function GET(req) {
     }
 
     // =========================
-    // CATEGORY → IDs
+    // CATEGORY IDS
     // =========================
     let categoryIds = [];
 
     if (categorySlug) {
       const slugs = categorySlug.split(",");
 
-      const categories = await CategoryModel.find({
+      const categoriesFromDB = await CategoryModel.find({
         slug: { $in: slugs },
       }).select("_id");
 
-      categoryIds = categories.map((c) => c._id);
+      categoryIds = categoriesFromDB.map((c) => c._id);
     }
 
     // =========================
@@ -86,12 +88,11 @@ export async function GET(req) {
     }
 
     // =========================
-    // PIPELINE
+    // PRODUCTS PIPELINE
     // =========================
     let products = await ProductModel.aggregate([
       { $match: matchStage },
 
-      // 🔥 GET VARIANTS
       {
         $lookup: {
           from: "productvariants",
@@ -101,7 +102,6 @@ export async function GET(req) {
         },
       },
 
-      // 🔥 FILTER VARIANTS
       {
         $addFields: {
           variants: {
@@ -115,15 +115,36 @@ export async function GET(req) {
                     : []),
 
                   ...(colorArray.length
-                    ? [{ $in: ["$$variant.color.name", colorArray] }]
+                    ? [
+                        {
+                          $in: [
+                            "$$variant.color.name",
+                            colorArray,
+                          ],
+                        },
+                      ]
                     : []),
 
                   ...(minPrice !== null
-                    ? [{ $gte: ["$$variant.sellingPrice", minPrice] }]
+                    ? [
+                        {
+                          $gte: [
+                            "$$variant.sellingPrice",
+                            minPrice,
+                          ],
+                        },
+                      ]
                     : []),
 
                   ...(maxPrice !== null
-                    ? [{ $lte: ["$$variant.sellingPrice", maxPrice] }]
+                    ? [
+                        {
+                          $lte: [
+                            "$$variant.sellingPrice",
+                            maxPrice,
+                          ],
+                        },
+                      ]
                     : []),
                 ],
               },
@@ -132,28 +153,24 @@ export async function GET(req) {
         },
       },
 
-      // 🔥 REMOVE EMPTY PRODUCTS
       {
         $match: {
           "variants.0": { $exists: true },
         },
       },
 
-      // 🔥 MIN PRICE
       {
         $addFields: {
-          minPrice: { $min: "$variants.sellingPrice" },
+          minPrice: {
+            $min: "$variants.sellingPrice",
+          },
         },
       },
 
-      // 🔥 SORT
       { $sort: sortQuery },
-
-      // 🔥 PAGINATION
       { $skip: skip },
       { $limit: limit + 1 },
 
-      // 🔥 GET IMAGES
       {
         $lookup: {
           from: "medias",
@@ -163,7 +180,6 @@ export async function GET(req) {
         },
       },
 
-      // 🔥 FINAL SHAPE
       {
         $project: {
           _id: 1,
@@ -179,7 +195,6 @@ export async function GET(req) {
                 _id: "$$img._id",
                 secure_url: "$$img.secure_url",
                 thumbnail_url: "$$img.thumbnail_url",
-                alt: "$$img.alt",
               },
             },
           },
@@ -194,9 +209,14 @@ export async function GET(req) {
                 stock: "$$v.stock",
                 sellingPrice: "$$v.sellingPrice",
                 mrp: "$$v.mrp",
-                discountPercentage: "$$v.discountPercentage",
+                discountPercentage:
+                  "$$v.discountPercentage",
                 finalPrice: "$$v.finalPrice",
-                color: "$$v.color",
+                color: {
+                  name: {
+                    $ifNull: ["$$v.color.name", null],
+                  },
+                },
               },
             },
           },
@@ -205,7 +225,7 @@ export async function GET(req) {
     ]);
 
     // =========================
-    // NEXT PAGE
+    // PAGINATION
     // =========================
     let nextPage = null;
 
@@ -215,14 +235,84 @@ export async function GET(req) {
     }
 
     // =========================
-    // RESPONSE
+    // CATEGORIES
     // =========================
-    return response(true, 200, "Products fetched successfully", {
-      products,
-      nextPage,
-    });
+    const categories = await CategoryModel.find({})
+      .select("name slug")
+      .lean();
+
+    // =========================
+    // COLORS (FIXED - NO DUPLICATE, NO CRASH)
+    // =========================
+    const colorAgg = await ProductModel.aggregate([
+      {
+        $lookup: {
+          from: "productvariants",
+          localField: "_id",
+          foreignField: "product",
+          as: "variants",
+        },
+      },
+
+      { $unwind: "$variants" },
+
+      {
+        $project: {
+          colorName: {
+            $ifNull: ["$variants.color.name", null],
+          },
+        },
+      },
+
+      {
+        $match: {
+          colorName: { $ne: null },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$colorName",
+        },
+      },
+
+      {
+        $project: {
+          _id: 0,
+          name: "$_id",
+        },
+      },
+    ]);
+
+    // ✅ FINAL CLEAN COLORS (ONLY ONCE)
+    const colors = colorAgg;
+
+    // =========================
+    // SAFE RESPONSE
+    // =========================
+    return Response.json(
+      {
+        success: true,
+        message: "Products fetched successfully",
+        data: {
+          products,
+          nextPage,
+          categories,
+          colors,
+        },
+      },
+      { status: 200 }
+    );
 
   } catch (error) {
-    return catchError(error);
+    console.error("SHOP API ERROR:", error);
+
+    return Response.json(
+      {
+        success: false,
+        message: error.message || "Internal Server Error",
+      },
+      { status: 500 }
+    );
   }
 }
